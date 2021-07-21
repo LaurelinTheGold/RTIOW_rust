@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
 use crate::{
-    hit::{self, HitRecord, Hittable},
+    hit::{self, Hittable},
     ray::Ray,
 };
 
@@ -31,33 +31,17 @@ impl HittableList {
 
 impl Hittable for HittableList {
     fn hit(&self, r: &Ray, t_min: f64, t_max: f64, rec: &mut hit::HitRecord) -> bool {
-        let mut temp_rec: HitRecord = HitRecord::new_dfl();
+        // let mut temp_rec: HitRecord = HitRecord::new_dfl();
         let mut hit_anything = false;
         let mut closest_so_far = t_max;
         let mut rec = rec;
 
         for obj in self.objects.iter() {
-            if obj.hit(r, t_min, closest_so_far, &mut temp_rec) {
+            if obj.hit(r, t_min, closest_so_far, &mut rec) {
                 hit_anything = true;
-                closest_so_far = *temp_rec.t();
-                *rec = temp_rec;
+                closest_so_far = *rec.t();
             }
         }
-
         return hit_anything;
-
-        // Directly mutates data over changing a temp value
-        // let mut hit_anything = false;
-        // let mut closest_so_far = t_max;
-        // let mut rec = rec;
-
-        // for object in self.objects.iter() {
-        //     if object.hit(r, t_min, closest_so_far, &mut rec) {
-        //         hit_anything = true;
-        //         closest_so_far = *rec.t();
-        //     }
-        // }
-
-        // hit_anything
     }
 }

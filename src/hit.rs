@@ -1,5 +1,5 @@
 use crate::{
-    ray::{self, Ray},
+    ray::Ray,
     vec3::{Point3, Vec3},
 };
 
@@ -66,6 +66,11 @@ impl HitRecord {
         } else {
             -*outward_normal
         });
+    }
+
+    /// Get a reference to the hit record's normal.
+    pub fn normal(&self) -> &Vec3 {
+        &self.normal
     }
 }
 

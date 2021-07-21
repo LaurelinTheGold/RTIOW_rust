@@ -1,7 +1,9 @@
 use std::{convert::TryInto, ops::*};
 
-pub(crate) type Color = Vec3;
-pub(crate) type Point3 = Vec3;
+use crate::utils::*;
+
+pub type Color = Vec3;
+pub type Point3 = Vec3;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Vec3 {
@@ -169,6 +171,40 @@ impl Vec3 {
     }
     pub fn unit_vector(&self) -> Vec3 {
         *self / self.length()
+    }
+
+    pub fn random_vec3() -> Vec3 {
+        Vec3::new(random_double(), random_double(), random_double())
+    }
+    pub fn random_vec3_range(min: f64, max: f64) -> Vec3 {
+        Vec3::new(
+            random_double_range(min, max),
+            random_double_range(min, max),
+            random_double_range(min, max),
+        )
+    }
+    /// Initial Lambertian
+    pub fn random_in_unit_sphere() -> Vec3 {
+        let mut out: Vec3 = Vec3::random_vec3_range(-1.0, 1.0);
+        loop {
+            if out.length_squared() < 1.0 {
+                return out;
+            }
+            out = Vec3::random_vec3_range(-1.0, 1.0);
+        }
+    }
+    /// Better Lambertian
+    pub fn random_unit_vector() -> Vec3 {
+        Vec3::random_in_unit_sphere().unit_vector()
+    }
+    /// Even better Lambertian
+    pub fn random_in_hemisphere(normal: &Vec3) -> Vec3 {
+        let in_unit_sphere = Vec3::random_in_unit_sphere();
+        if in_unit_sphere.dot(*normal) > 0.0 {
+            in_unit_sphere
+        } else {
+            -in_unit_sphere
+        }
     }
 }
 
