@@ -44,11 +44,10 @@ impl Vec3 {
         println!("{:?}", self)
     }
     pub fn length(&self) -> f64 {
-        self.elem.iter().map(|x| (*x) * (*x)).sum::<f64>().sqrt()
+        self.length_squared().sqrt()
     }
     pub fn length_squared(&self) -> f64 {
-        let tmp = self.length();
-        tmp * tmp
+        self.elem.iter().map(|x| (*x) * (*x)).sum::<f64>()
     }
 }
 
@@ -205,6 +204,24 @@ impl Vec3 {
         } else {
             -in_unit_sphere
         }
+    }
+    pub fn near_zero(&self) -> bool {
+        let s = 1e-8_f64;
+        self.x().abs() < s && self.y().abs() < s && self.z().abs() < s
+    }
+    pub fn reflect(&self, n: &Vec3) -> Vec3 {
+        *self - 2.0 * self.dot(*n) * *n
+    }
+    pub fn refract(uv: &Vec3, n: &Vec3, etai_over_etat: f64) -> Vec3 {
+        // let cos_theta = (*uv).dot(*n).min(1.0);
+        // let r_out_perp = etai_over_etat * (*uv + cos_theta * *n);
+        // let r_out_parallel = (1.0 - r_out_perp.length_squared()).abs().sqrt() * -(*n);
+        // r_out_perp + r_out_parallel
+        let uv = *uv;
+        let cos_theta = n.dot(-uv).min(1.0);
+        let r_out_perp = etai_over_etat * (uv + cos_theta * *n);
+        let r_out_parallel = (1.0 - r_out_perp.length_squared()).abs().sqrt() * -1.0 * *n;
+        r_out_parallel + r_out_perp
     }
 }
 

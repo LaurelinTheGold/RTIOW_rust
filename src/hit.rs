@@ -1,32 +1,45 @@
+use std::{fmt::Debug, rc::Rc};
+
 use crate::{
+    material::{Lambertian, Material},
     ray::Ray,
     vec3::{Point3, Vec3},
 };
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct HitRecord {
     p: Point3,
     normal: Vec3,
+    mat_ptr: Rc<dyn Material>,
     t: f64,
     front_face: bool,
 }
 
 impl HitRecord {
-    pub fn new(p: Point3, normal: Vec3, t: f64, front_face: bool) -> Self {
+    pub fn new(
+        p: Point3,
+        normal: Vec3,
+        mat_ptr: Rc<dyn Material>,
+        t: f64,
+        front_face: bool,
+    ) -> Self {
         Self {
             p,
             normal,
+            mat_ptr,
             t,
             front_face,
         }
     }
+
     pub fn new_dfl() -> Self {
-        Self {
-            p: Point3::new_dfl(),
-            normal: Vec3::new_dfl(),
-            t: 0.0,
-            front_face: false,
-        }
+        Self::new(
+            Point3::new_dfl(),
+            Vec3::new_dfl(),
+            Rc::new(Lambertian::new(Vec3::new_singleton(0.5))), // Change later
+            0.0,
+            false,
+        )
     }
 
     /// Set the hit record's t.
@@ -72,8 +85,32 @@ impl HitRecord {
     pub fn normal(&self) -> &Vec3 {
         &self.normal
     }
-}
 
+    /// Set the hit record's mat ptr.
+    pub fn set_mat_ptr(&mut self, mat_ptr: Rc<dyn Material>) {
+        self.mat_ptr = mat_ptr;
+    }
+
+    /// Get a reference to the hit record's mat ptr.
+    pub fn mat_ptr(&self) -> &Rc<dyn Material> {
+        &self.mat_ptr
+    }
+
+    /// Get a reference to the hit record's front face.
+    pub fn front_face(&self) -> &bool {
+        &self.front_face
+    }
+}
+impl Debug for HitRecord {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // write!(
+        //     f,
+        //     "p: {:?}, n: {:?}, t: {:?}, front: {:?}",
+        //     self.p, self.normal, self.t, self.front_face
+        // )
+        write!(f, "p: {:?}, n: {:?}", self.p, self.normal)
+    }
+}
 pub trait Hittable {
     fn hit(&self, r: &Ray, t_min: f64, t_max: f64, rec: &mut HitRecord) -> bool;
 }

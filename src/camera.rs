@@ -1,6 +1,5 @@
 use crate::{
     ray::Ray,
-    utils,
     vec3::{Point3, Vec3},
 };
 
@@ -36,12 +35,7 @@ impl Camera {
         let vertical = Vec3::new(0.0, viewport_height, 0.0);
         let lower_left_corner =
             origin - horizontal / 2.0 - vertical / 2.0 - Vec3::new(0.0, 0.0, focal_length);
-        Self {
-            origin,
-            lower_left_corner,
-            horizontal,
-            vertical,
-        }
+        Self::new(origin, lower_left_corner, horizontal, vertical)
     }
 
     /// Get a reference to the camera's origin.

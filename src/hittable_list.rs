@@ -11,22 +11,22 @@ pub struct HittableList {
 }
 
 impl HittableList {
+    // pub fn new(object: Rc<dyn Hittable>) -> Self {
+    //     let mut tmp = HittableList::new_dfl();
+    //     tmp.add(object);
+    //     tmp
+    // }
     pub fn new_dfl() -> Self {
         Self {
             objects: Vec::new(),
         }
     }
-    pub fn new(object: Rc<dyn Hittable>) -> Self {
-        let mut tmp = HittableList::new_dfl();
-        tmp.add(object);
-        tmp
-    }
     pub fn add(&mut self, object: Rc<dyn Hittable>) {
         self.objects.push(object);
     }
-    pub fn clear(&mut self) {
-        self.objects.clear();
-    }
+    // pub fn clear(&mut self) {
+    //     self.objects.clear();
+    // }
 }
 
 impl Hittable for HittableList {
