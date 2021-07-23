@@ -1,6 +1,7 @@
 use crate::{
     hit::HitRecord,
     ray::Ray,
+    utils::random_double,
     vec3::{Color, Vec3},
 };
 
@@ -18,7 +19,6 @@ pub trait Material {
 pub struct Lambertian {
     albedo: Color,
 }
-
 impl Lambertian {
     pub fn new(albedo: Color) -> Self {
         Self { albedo }
@@ -29,7 +29,6 @@ impl Lambertian {
         &self.albedo
     }
 }
-
 impl Material for Lambertian {
     fn scatter(
         &self,
@@ -47,11 +46,11 @@ impl Material for Lambertian {
         true
     }
 }
+
 pub struct Metal {
     albedo: Color,
     fuzz: f64,
 }
-
 impl Metal {
     pub fn new(albedo: Color, fuzz: f64) -> Self {
         Self {
@@ -87,10 +86,10 @@ impl Material for Metal {
         scattered.dir().dot(*rec.normal()) > 0.0
     }
 }
+
 pub struct Dielectric {
     ir: f64,
 }
-
 impl Dielectric {
     pub fn new(ir: f64) -> Self {
         Self { ir }
@@ -99,6 +98,12 @@ impl Dielectric {
     /// Get a reference to the dielectric's ir.
     pub fn ir(&self) -> &f64 {
         &self.ir
+    }
+    fn reflectance(cosine: f64, ref_idx: f64) -> f64 {
+        // Schlick Approximation
+        let r0 = (1.0 - ref_idx) / (1.0 + ref_idx);
+        let r0 = r0 * r0;
+        r0 + (1.0 - r0) * (1.0 - cosine).powi(5)
     }
 }
 impl Material for Dielectric {
@@ -116,17 +121,17 @@ impl Material for Dielectric {
             *self.ir()
         };
         let unit_direction = r_in.dir().unit_vector();
-        let refracted = Vec3::refract(&unit_direction, rec.normal(), refraction_ratio);
-        *scattered = Ray::new(*rec.p(), refracted);
-        // let cos_theta = -unit_direction.dot(*rec.normal()).min(1.0);
-        // let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
-        // let cannot_refract = refraction_ratio * sin_theta > 1.0;
-        // let direction = if cannot_refract {
-        //     unit_direction.reflect(rec.normal())
-        // } else {
-        //     Vec3::refract(&unit_direction, rec.normal(), refraction_ratio)
-        // };
-        // *scattered = Ray::new(*rec.p(), direction);
+        let cos_theta = -unit_direction.dot(*rec.normal()).min(1.0);
+        let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
+        let cannot_refract = refraction_ratio * sin_theta > 1.0;
+        let direction = if cannot_refract
+            || Dielectric::reflectance(cos_theta, refraction_ratio) > random_double()
+        {
+            unit_direction.reflect(rec.normal())
+        } else {
+            Vec3::refract(&unit_direction, rec.normal(), refraction_ratio)
+        };
+        *scattered = Ray::new(*rec.p(), direction);
         true
     }
 }

@@ -1,12 +1,14 @@
 use std::{
-    f64::INFINITY,
+    f64::{consts::PI, INFINITY},
     io::{self, Write},
     rc::Rc,
 };
 
 use hit::{HitRecord, Hittable};
 
+use material::Material;
 use ray::Ray;
+use utils::random_double_range;
 use vec3::Vec3;
 
 use crate::{
@@ -29,31 +31,12 @@ mod sphere;
 mod utils;
 mod vec3;
 
-// fn hit_sphere(center: &Point3, radius: f64, r: &Ray) -> f64 {
-//     use vec3::*;
-//     let oc: Vec3 = r.orig() - *center;
-//     let a = r.dir().length_squared();
-//     let half_b = oc.dot(r.dir());
-//     let c = oc.length_squared() - radius * radius;
-//     let discriminant = half_b * half_b - a * c;
-//     if discriminant < 0.0 {
-//         -1.0
-//     } else {
-//         (-half_b - discriminant.sqrt()) / (a)
-//     }
-// }
-
 fn ray_color(r: &Ray, world: &dyn Hittable, depth: i32) -> Color {
     if depth <= 0 {
         return Color::new_dfl();
     }
     let mut rec = HitRecord::new_dfl();
     if world.hit(r, 0.001, INFINITY, &mut rec) {
-        // // let target = *rec.p() + *rec.normal() + Vec3::random_in_unit_sphere();
-        // // let target = *rec.p() + *rec.normal() + Vec3::random_unit_vector();
-        // let target = *rec.p() + Vec3::random_in_hemisphere(rec.normal());
-        // return 0.5 * ray_color(&Ray::new(*rec.p(), target - *rec.p()), world, depth - 1);
-        // // return 0.5 * (*rec.normal() + Color::new_singleton(1.0));
         let mut scattered: Ray = Ray::new_dfl();
         let mut attenuation: Color = Color::new_dfl();
         if rec
@@ -68,49 +51,158 @@ fn ray_color(r: &Ray, world: &dyn Hittable, depth: i32) -> Color {
     let t: f64 = 0.5 * (unit_direction.y() + 1.0);
     return (1.0 - t) * Color::new_singleton(1.0) + t * Color::new(0.5, 0.7, 1.0);
 }
-fn main() {
-    // Image
-    const COLOR_SIZE: u64 = 256;
 
-    const ASPECT_RATIO: f64 = 16.0 / 9.0;
-    const IMAGE_WIDTH: u64 = 400;
-    const IMAGE_HEIGHT: u64 = (IMAGE_WIDTH as f64 / ASPECT_RATIO) as u64;
-    const SAMPLES_PER_PIXEL: usize = 100;
-    const MAX_DEPTH: i32 = 50;
-
-    // World
+fn random_scene() -> HittableList {
     let mut world = HittableList::new_dfl();
-    // world.add(Rc::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5)));
-    // world.add(Rc::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), -100.0)));
-    let material_ground = Rc::new(Lambertian::new(Color::new(0.8, 0.8, 0.0)));
-    // let material_center = Rc::new(Lambertian::new(Color::new(0.7, 0.3, 0.3)));
-    // let material_left = Rc::new(Metal::new(Color::new_singleton(0.8), 0.3));
-    let material_center = Rc::new(Dielectric::new(1.5));
-    let material_left = Rc::new(Dielectric::new(1.5));
-    let material_right = Rc::new(Metal::new(Color::new(0.8, 0.6, 0.2), 1.0));
+    let ground_material = Rc::new(Lambertian::new(Color::new(0.5, 0.5, 0.5)));
     world.add(Rc::new(Sphere::new(
-        Point3::new(0.0, -100.5, -1.0),
-        100.0,
-        material_ground,
+        Point3::new(0.0, -1000.0, 0.0),
+        1000.0,
+        ground_material,
     )));
+    for a in -11..11 {
+        for b in -11..11 {
+            let choose_mat = random_double();
+            let center = Point3::new(
+                a as f64 + 0.9 * random_double(),
+                0.2,
+                b as f64 + 0.9 * random_double(),
+            );
+            if (center - Point3::new(4.0, 0.2, 0.0)).length() > 0.9 {
+                let sphere_material: Rc<dyn Material> = match choose_mat {
+                    x if x < 0.8 => {
+                        Rc::new(Lambertian::new(Color::random_vec3() * Color::random_vec3()))
+                    }
+                    x if x < 0.95 => Rc::new(Metal::new(
+                        Color::random_vec3_range(0.5, 1.0),
+                        random_double_range(0.0, 0.5),
+                    )),
+                    _ => Rc::new(Dielectric::new(1.5)),
+                };
+                world.add(Rc::new(Sphere::new(center, 0.2, sphere_material)));
+            }
+        }
+    }
+    let material1 = Rc::new(Dielectric::new(1.5));
     world.add(Rc::new(Sphere::new(
-        Point3::new(0.0, 0.0, -1.0),
-        0.5,
-        material_center,
+        Point3::new(0.0, 1.0, 0.0),
+        1.0,
+        material1,
     )));
+    let material2 = Rc::new(Lambertian::new(Color::new(0.4, 0.2, 0.1)));
     world.add(Rc::new(Sphere::new(
-        Point3::new(-1.0, 0.0, -1.0),
-        0.5,
-        material_left,
+        Point3::new(-4.0, 1.0, 0.0),
+        1.0,
+        material2,
     )));
+    let material3 = Rc::new(Metal::new(Color::new(0.7, 0.6, 0.5), 0.0));
     world.add(Rc::new(Sphere::new(
-        Point3::new(1.0, 0.0, -1.0),
-        0.5,
-        material_right,
+        Point3::new(4.0, 1.0, 0.0),
+        1.0,
+        material3,
     )));
+    world
+}
+fn main() {
+    // // Image
+    // const COLOR_SIZE: u64 = 256;
+
+    // const ASPECT_RATIO: f64 = 16.0 / 9.0;
+    // const IMAGE_WIDTH: u64 = 400;
+    // const IMAGE_HEIGHT: u64 = (IMAGE_WIDTH as f64 / ASPECT_RATIO) as u64;
+    // const SAMPLES_PER_PIXEL: usize = 100;
+    // const MAX_DEPTH: i32 = 50;
+
+    // // World
+    // let mut world = HittableList::new_dfl();
+    // let material_ground = Rc::new(Lambertian::new(Color::new(0.8, 0.8, 0.0)));
+    // let material_center = Rc::new(Lambertian::new(Color::new(0.1, 0.2, 0.5)));
+    // let material_left = Rc::new(Dielectric::new(1.5));
+    // let material_right = Rc::new(Metal::new(Color::new(0.8, 0.6, 0.2), 0.0));
+    // let tmp = material_left.clone();
+
+    // world.add(Rc::new(Sphere::new(
+    //     Point3::new(0.0, -100.5, -1.0),
+    //     100.0,
+    //     material_ground,
+    // )));
+    // world.add(Rc::new(Sphere::new(
+    //     Point3::new(0.0, 0.0, -1.0),
+    //     0.5,
+    //     material_center,
+    // )));
+    // world.add(Rc::new(Sphere::new(
+    //     Point3::new(-1.0, 0.0, -1.0),
+    //     0.5,
+    //     material_left,
+    // )));
+    // world.add(Rc::new(Sphere::new(
+    //     Point3::new(-1.0, 0.0, -1.0),
+    //     -0.4,
+    //     tmp,
+    // )));
+    // world.add(Rc::new(Sphere::new(
+    //     Point3::new(1.0, 0.0, -1.0),
+    //     0.5,
+    //     material_right,
+    // )));
 
     // Camera
-    let cam = Camera::new_dfl();
+    // let cam = Camera::new(
+    //     Point3::new(-2.0, 2.0, 1.0),
+    //     Point3::new(0.0, 0.0, -1.0),
+    //     Vec3::new(0.0, 1.0, 0.0),
+    //     20.0,
+    //     ASPECT_RATIO,
+    // );
+    // let lookfrom = Point3::new(3.0, 3.0, 2.0);
+    // let lookat = Point3::new(0.0, 0.0, -1.0);
+    // let vup = Vec3::new(0.0, 1.0, 0.0);
+    // let focus_dist = (lookfrom - lookat).length();
+    // let cam = Camera::new(lookfrom, lookat, vup, 20.0, ASPECT_RATIO, 2.0, focus_dist);
+
+    // // World
+    // let r = (PI / 4.0).cos();
+    // let mut world = HittableList::new_dfl();
+    // let material_left = Rc::new(Lambertian::new(Color::new(0.0, 0.0, 1.0)));
+    // let material_right = Rc::new(Lambertian::new(Color::new(1.0, 0.0, 0.0)));
+    // world.add(Rc::new(Sphere::new(
+    //     Point3::new(-r, 0.0, -1.0),
+    //     r,
+    //     material_left,
+    // )));
+    // world.add(Rc::new(Sphere::new(
+    //     Point3::new(r, 0.0, -1.0),
+    //     r,
+    //     material_right,
+    // )));
+    // // Camera
+    // let cam = Camera::new(90.0, ASPECT_RATIO);
+
+    // Image
+    const COLOR_SIZE: u64 = 256;
+    const ASPECT_RATIO: f64 = 3.0 / 2.0;
+    const IMAGE_WIDTH: u64 = 1200;
+    const IMAGE_HEIGHT: u64 = (IMAGE_WIDTH as f64 / ASPECT_RATIO) as u64;
+    const SAMPLES_PER_PIXEL: usize = 500;
+    const MAX_DEPTH: i32 = 50;
+    // World
+    let world = random_scene();
+    // Camera
+    let lookfrom = Point3::new(13.0, 2.0, 3.0);
+    let lookat = Point3::new_dfl();
+    let vup = Vec3::new(0.0, 1.0, 0.0);
+    let dist_to_focus = 10.0;
+    let aperture = 0.1;
+    let cam = Camera::new(
+        lookfrom,
+        lookat,
+        vup,
+        20.0,
+        ASPECT_RATIO,
+        aperture,
+        dist_to_focus,
+    );
 
     // Render
 
@@ -132,55 +224,3 @@ fn main() {
     }
     eprintln!("\nDone.");
 }
-
-// ! For debugging use!
-// fn ray_color(r: &Ray, world: &dyn Hittable, depth: i32) -> Color {
-//     if depth <= 0 {
-//         println!("\nBottom Out");
-//         return Color::new_dfl();
-//     }
-//     println!("ray: {:?}, enter ray_color", r);
-//     let mut rec = HitRecord::new_dfl();
-//     if world.hit(r, 0.001, INFINITY, &mut rec) {
-//         println!("hit: {:?}, world hit", rec);
-//         let mut scattered: Ray = Ray::new_dfl();
-//         let mut attenuation: Color = Color::new_dfl();
-//         if rec
-//             .mat_ptr()
-//             .scatter(r, &rec, &mut attenuation, &mut scattered)
-//         {
-//             println!("new: {:?}, scattered ray", &scattered);
-//             return attenuation * ray_color(&scattered, world, depth - 1);
-//         }
-//         println!("Hit no Scatter");
-//         return Color::new_dfl();
-//     }
-//     let unit_direction: Vec3 = r.dir().unit_vector();
-//     let t: f64 = 0.5 * (unit_direction.y() + 1.0);
-//     println!("Background");
-//     return (1.0 - t) * Color::new_singleton(1.0) + t * Color::new(0.5, 0.7, 1.0);
-// }
-// fn main() {
-//     // Image
-//     const SAMPLES_PER_PIXEL: usize = 25;
-//     const MAX_DEPTH: i32 = 4;
-//     // World
-//     let mut world = HittableList::new_dfl();
-//     let material_center = Rc::new(Dielectric::new(1.5));
-//     world.add(Rc::new(Sphere::new(
-//         Point3::new(0.0, 0.0, 0.0),
-//         1.0,
-//         material_center,
-//     )));
-
-//     // Eye
-//     let eye_pos = Point3::new(0.0, 0.0, 2.0);
-//     let eye_dir = Vec3::new(0.0, 0.0, -1.0);
-
-//     // Render
-//     let mut pixel_color = Color::new_dfl();
-//     let r = Ray::new(eye_pos, eye_dir);
-//     pixel_color += ray_color(&r, &world, MAX_DEPTH);
-
-//     write_color(pixel_color, SAMPLES_PER_PIXEL);
-// }
