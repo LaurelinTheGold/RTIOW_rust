@@ -1,10 +1,14 @@
-use std::{f32::INFINITY, iter::Sum, u8, usize};
+use std::marker::{Send, Sync};
+use std::{f32::INFINITY, u8, usize};
 
-use rand::Rng;
+use rand::prelude::StdRng;
+use rand::{thread_rng, Rng};
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
+use rayon::prelude::*;
 
 use crate::{
     camera::Camera,
-    hittable::{HitRecord, Hittable, HittableObject},
+    hittable::{Hittable, HittableObject},
     material::Material,
     ray::Ray,
     utils::random,
@@ -23,6 +27,7 @@ pub fn ray_color<'b, R: Rng + ?Sized>(
         match world.hit(r, 0.001, INFINITY) {
             Some(rec) => match rec.mat_ptr().scatter(r, &rec, rng) {
                 Some(scatter_bundle) => {
+                    // dbg!(&scatter_bundle);
                     scatter_bundle.albedo() * ray_color(scatter_bundle.ray(), world, depth - 1, rng)
                 }
                 None => Color::new_dfl(),
@@ -33,18 +38,6 @@ pub fn ray_color<'b, R: Rng + ?Sized>(
                 (1.0 - t) * Color::new_singleton(1.0) + t * Color::new(0.5, 0.7, 1.0)
             }
         }
-        // let mut rec = HitRecord::new_dfl();
-        // if world.hit(r, 0.001, INFINITY, &mut rec) {
-        //     let mut scattered: Ray = Ray::new_dfl();
-        //     let mut attenuation: Color = Color::new_dfl();
-        //     if rec
-        //         .mat_ptr()
-        //         .scatter(r, &rec, &mut attenuation, &mut scattered)
-        //     {
-        //         return attenuation * ray_color(&scattered, world, depth - 1);
-        //     }
-        //     return Color::new_dfl();
-        // }
     }
 }
 
@@ -60,13 +53,23 @@ fn render_a_row<R: Rng + ?Sized>(
     rng: &mut R,
 ) -> Vec<u32> {
     (0..width)
-        .into_iter()
-        .map(|curr_col| {
+        .into_par_iter()
+        .map(|curr_col| -> Vec3 {
+            // (0..samples_per_pixel)
+            //     .into_par_iter()
+            //     .map(|_x| -> Vec3 {
+            //         let mut rng = thread_rng();
+            //         get_ray_color(
+            //             world, max_depth, width, height, curr_row, curr_col, &cam, &mut rng,
+            //         )
+            //     })
+            //     .reduce(|| Vec3::new_dfl(), |boi, food| boi + food)
+            let mut rng = thread_rng();
             (0..samples_per_pixel)
                 .into_iter()
-                .map(|_x| {
+                .map(|_x| -> Vec3 {
                     get_ray_color(
-                        world, max_depth, width, height, curr_row, curr_col, &cam, rng,
+                        world, max_depth, width, height, curr_row, curr_col, &cam, &mut rng,
                     )
                 })
                 .fold(Vec3::new_dfl(), |boi, food| boi + food)
@@ -83,7 +86,7 @@ fn color_to_bitboi(c: Color, samples_per_pixel: usize) -> u32 {
     let map_to_u8 = |x: f32| ((x * scale).sqrt().clamp(zeroish, oneish) * color_scale) as u8;
     0 | (map_to_u8(c.x()) as u32) << 16 | (map_to_u8(c.y()) as u32) << 8 | (map_to_u8(c.z()) as u32)
 }
-
+/// Do once for each in samplesperpixel
 fn get_ray_color<R: Rng + ?Sized>(
     world: &HittableObject,
     max_depth: usize,
@@ -100,7 +103,7 @@ fn get_ray_color<R: Rng + ?Sized>(
     ray_color(r, world, max_depth, rng)
 }
 
-pub fn render_scene<R: Rng + ?Sized>(
+pub fn render_scene<R: Rng + ?Sized + Sync + Send>(
     world: &HittableObject,
     max_depth: usize,
     width: usize,
@@ -110,10 +113,11 @@ pub fn render_scene<R: Rng + ?Sized>(
     rng: &mut R,
 ) -> Vec<Vec<u32>> {
     (0..height)
+        .into_par_iter()
         .rev()
-        .into_iter()
         .map(|row| {
-            eprint!("\rlines remaining: {}", row);
+            // eprint!("\rlines remaining: {}", row);
+            let mut rng = thread_rng();
             render_a_row(
                 world,
                 max_depth,
@@ -122,29 +126,8 @@ pub fn render_scene<R: Rng + ?Sized>(
                 row,
                 samples_per_pixel,
                 &cam,
-                rng,
+                &mut rng,
             )
         })
         .collect::<Vec<_>>()
 }
-
-// pub fn render_scene() {
-//     // Render
-//     println!("P3\n{} {}\n{}", IMAGE_WIDTH, IMAGE_HEIGHT, COLOR_SIZE - 1);
-
-//     for j in (0..IMAGE_HEIGHT).rev() {
-//         eprint!("\rScanlines remaining: {} ", j);
-//         io::stderr().flush().unwrap();
-//         for i in 0..IMAGE_WIDTH {
-//             let mut pixel_color = Color::new_dfl();
-//             for _s in 0..SAMPLES_PER_PIXEL {
-//                 let u = (i as f32 + random_double()) / (IMAGE_WIDTH - 1) as f32;
-//                 let v = (j as f32 + random_double()) / (IMAGE_HEIGHT - 1) as f32;
-//                 let r = cam.get_ray(u, v);
-//                 pixel_color += ray_color(&r, &world, MAX_DEPTH);
-//             }
-//             write_color(pixel_color, SAMPLES_PER_PIXEL);
-//         }
-//     }
-//     eprintln!("\nDone.");
-// }

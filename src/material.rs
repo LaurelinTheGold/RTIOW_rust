@@ -7,7 +7,7 @@ use crate::{
     vec3::{Color, Vec3},
 };
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct ScatterBundle {
     albedo: Color,
     ray: Ray,
@@ -72,7 +72,7 @@ impl Material for MaterialType {
             MaterialType::Dielectric(ir) => {
                 let refrac_ratio = if rec.front_face() { 1.0 / ir } else { *ir };
                 let unit_dir = r_in.dir().unit_vector();
-                let cos = -unit_dir.dot(rec.normal()).min(1.);
+                let cos = (-1. * unit_dir).dot(rec.normal()).min(1.);
                 let cannot_refract = refrac_ratio * (1. - cos * cos).sqrt() > 1.;
                 Some(ScatterBundle::new(
                     Color::new_singleton(1.0),

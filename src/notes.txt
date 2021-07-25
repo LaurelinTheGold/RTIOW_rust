@@ -56,3 +56,11 @@ https://www.reddit.com/r/rust/comments/kbec6h/polymorphism_in_rust_enums_vs_trai
     A trait is a closed set of properties, with an arbitrary number of related types.
 
 https://www.forrestthewoods.com/blog/should-small-rust-structs-be-passed-by-copy-or-by-borrow/
+
+debug http://psgraphics.blogspot.com/2020/12/debugging-refraction-in-ray-tracer.html
+
+
+imagemagick: convert x.ppm x.png
+
+gitbash or wsl
+$ RUSTFLAGS="--emit asm" cargo build --release && cargo run --release > image_balls.ppm
