@@ -1,47 +1,40 @@
-use core::f64;
+use rand::Rng;
 
 use crate::{
     ray::Ray,
     utils::degrees_to_radians,
-    vec3::{Point3, Vec3},
+    vec3::{Point, Vec3},
 };
 
-#[derive()]
 pub struct Camera {
-    origin: Point3,
+    origin: Point,
     horizontal: Vec3,
     vertical: Vec3,
-    lower_left_corner: Point3,
+    lower_left_corner: Point,
     u: Vec3,
     v: Vec3,
     w: Vec3,
-    lens_radius: f64,
+    lens_radius: f32,
 }
 
 impl Camera {
     pub fn new(
-        lookfrom: Point3,
-        lookat: Point3,
+        lookfrom: Point,
+        lookat: Point,
         vup: Vec3,
-        vfov: f64,
-        aspect_ratio: f64,
-        aperture: f64,
-        focus_dist: f64,
+        vfov: f32,
+        aspect_ratio: f32,
+        aperture: f32,
+        focus_dist: f32,
     ) -> Self {
         let theta = degrees_to_radians(vfov);
-        let h: f64 = (theta / 2.0).tan();
+        let h: f32 = (theta / 2.0).tan();
         let viewport_height = 2.0 * h;
         let viewport_width = aspect_ratio * viewport_height;
 
         let w = (lookfrom - lookat).unit_vector();
         let u = vup.cross(w).unit_vector();
         let v = w.cross(u);
-
-        // let focal_length = 1.0;
-        // let origin = Point3::new_dfl();
-        // let hori = Vec3::new(viewport_width, 0.0, 0.0);
-        // let vert = Vec3::new(0.0, viewport_height, 0.0);
-        // let llcn = origin - hori / 2.0 - vert / 2.0 - Vec3::new(0.0, 0.0, focal_length);
 
         let origin = lookfrom;
         let horizontal = viewport_width * u * focus_dist;
@@ -59,40 +52,51 @@ impl Camera {
             lens_radius,
         }
     }
+    pub fn new_dfl() -> Self {
+        let aspect_ratio = 16. / 9.;
+        let viewport_height = 2.;
+        let viewport_width = aspect_ratio * viewport_height;
+        let focal_length = 1.;
+        let origin = Point::new_dfl();
+        let horizontal = Vec3::new(viewport_width, 0., 0.);
+        let vertical = Vec3::new(0., viewport_height, 0.);
+        let lower_left_corner =
+            origin - horizontal / 2. - vertical / 2. - Vec3::new(0., 0., focal_length);
+        let w = Vec3::new(0., 0., -1.);
+        let u = Vec3::new(-1., 0., 0.);
+        let v = w.cross(u);
 
-    // pub fn new(
-    //     origin: Point3,
-    //     lower_left_corner: Point3,
-    //     horizontal: Vec3,
-    //     vertical: Vec3,
-    // ) -> Self {
-    //     Self {
-    //         origin,
-    //         lower_left_corner,
-    //         horizontal,
-    //         vertical,
-    //     }
-    // }
-    // pub fn new_dfl() -> Self {
-    //     let aspect_ratio = 16.0 / 9.0;
-    //     let viewport_height = 2.0;
-    //     let viewport_width = aspect_ratio * viewport_height;
-    //     let focal_length = 1.0;
-    //     let origin = Point3::new_dfl();
-    //     let horizontal = Vec3::new(viewport_width, 0.0, 0.0);
-    //     let vertical = Vec3::new(0.0, viewport_height, 0.0);
-    //     let lower_left_corner =
-    //         origin - horizontal / 2.0 - vertical / 2.0 - Vec3::new(0.0, 0.0, focal_length);
-    //     Self::new(origin, lower_left_corner, horizontal, vertical)
-    // }
+        Self {
+            origin,
+            horizontal,
+            vertical,
+            lower_left_corner,
+            u,
+            v,
+            w,
+            lens_radius: (0.0),
+        }
+    }
+
+    pub fn new_random(aspect_ratio: f32) -> Self {
+        Self::new(
+            Point::new(13., 2., 3.),
+            Point::new_dfl(),
+            Vec3::new(0., 1., 0.),
+            20.,
+            aspect_ratio,
+            0.1,
+            10.,
+        )
+    }
 
     /// Get a reference to the camera's origin.
-    pub fn origin(&self) -> &Point3 {
+    pub fn origin(&self) -> &Point {
         &self.origin
     }
 
     /// Get a reference to the camera's lower left corner.
-    pub fn lower_left_corner(&self) -> &Point3 {
+    pub fn lower_left_corner(&self) -> &Point {
         &self.lower_left_corner
     }
 
@@ -106,15 +110,8 @@ impl Camera {
         &self.vertical
     }
 
-    // pub fn get_ray(&self, u: f64, v: f64) -> Ray {
-    //     Ray::new(
-    //         *self.origin(),
-    //         *self.lower_left_corner() + u * *self.horizontal() + v * *self.vertical()
-    //             - *self.origin(),
-    //     )
-    // }
-    pub fn get_ray(&self, u: f64, v: f64) -> Ray {
-        let rd = *self.lens_radius() * Vec3::random_in_unit_disk();
+    pub fn get_ray<R: Rng + ?Sized>(&self, u: f32, v: f32, rng: &mut R) -> Ray {
+        let rd = *self.lens_radius() * Vec3::random_in_unit_disk(rng);
         let offset = *self.u() * rd.x() + *self.v() * rd.y();
         Ray::new(
             *self.origin() + offset,
@@ -125,7 +122,7 @@ impl Camera {
     }
 
     /// Get a reference to the camera's lens radius.
-    pub fn lens_radius(&self) -> &f64 {
+    pub fn lens_radius(&self) -> &f32 {
         &self.lens_radius
     }
 

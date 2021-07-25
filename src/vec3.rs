@@ -1,87 +1,68 @@
-use std::{convert::TryInto, ops::*};
+use std::{
+    iter::Sum,
+    ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign},
+};
 
-use crate::utils::*;
+use rand::Rng;
 
-pub type Color = Vec3;
-pub type Point3 = Vec3;
+use crate::utils::{random, random_range};
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub struct Vec3 {
-    elem: [f64; 3],
+    x: f32,
+    y: f32,
+    z: f32,
 }
 
+pub type Color = Vec3;
+pub type Point = Vec3;
+
 impl Vec3 {
-    pub fn new(e0: f64, e1: f64, e2: f64) -> Self {
-        Self { elem: [e0, e1, e2] }
+    pub fn new(x: f32, y: f32, z: f32) -> Self {
+        Self { x, y, z }
     }
-    pub fn new_singleton(e: f64) -> Self {
+    pub fn new_singleton(e: f32) -> Self {
         Self::new(e, e, e)
     }
     pub fn new_dfl() -> Self {
-        Self::new_singleton(0_f64)
+        Self::new_singleton(0_f32)
     }
-}
-impl Vec3 {
-    pub fn x(&self) -> f64 {
-        self.elem[0]
+
+    /// Get vec3's x.
+    pub fn x(&self) -> f32 {
+        self.x
     }
-    pub fn y(&self) -> f64 {
-        self.elem[1]
+
+    /// Get vec3's y.
+    pub fn y(&self) -> f32 {
+        self.y
     }
-    pub fn z(&self) -> f64 {
-        self.elem[2]
+
+    /// Get vec3's z.
+    pub fn z(&self) -> f32 {
+        self.z
     }
-    pub fn r(&self) -> f64 {
-        self.elem[0]
-    }
-    pub fn g(&self) -> f64 {
-        self.elem[1]
-    }
-    pub fn b(&self) -> f64 {
-        self.elem[2]
-    }
-    pub fn print(&self) -> () {
-        println!("{:?}", self)
-    }
-    pub fn length(&self) -> f64 {
+
+    pub fn length(&self) -> f32 {
         self.length_squared().sqrt()
     }
-    pub fn length_squared(&self) -> f64 {
-        self.elem.iter().map(|x| (*x) * (*x)).sum::<f64>()
+    pub fn length_squared(&self) -> f32 {
+        let a = self.x();
+        let b = self.y();
+        let c = self.z();
+        a * a + b * b + c * c
     }
 }
 
 impl Neg for Vec3 {
     type Output = Vec3;
     fn neg(self) -> Self::Output {
-        Self {
-            elem: self
-                .elem
-                .iter()
-                .map(|x| -x)
-                .collect::<Vec<f64>>()
-                .try_into()
-                .unwrap(),
-        }
-    }
-}
-impl Index<usize> for Vec3 {
-    type Output = f64;
-    fn index(&self, index: usize) -> &Self::Output {
-        &self.elem[index]
-    }
-}
-impl IndexMut<usize> for Vec3 {
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        &mut self.elem[index]
+        Self::new(-self.x(), -self.y(), -self.z())
     }
 }
 impl AddAssign for Vec3 {
     fn add_assign(&mut self, rhs: Self) {
-        self.elem
-            .iter_mut()
-            .zip(rhs.elem.iter())
-            .for_each(|(x, y)| *x += y);
+        *self = *self + rhs
     }
 }
 impl SubAssign for Vec3 {
@@ -89,14 +70,14 @@ impl SubAssign for Vec3 {
         *self += -rhs
     }
 }
-impl MulAssign<f64> for Vec3 {
-    fn mul_assign(&mut self, rhs: f64) {
-        self.elem.iter_mut().for_each(|x| *x *= rhs);
+impl MulAssign<f32> for Vec3 {
+    fn mul_assign(&mut self, rhs: f32) {
+        *self = *self * rhs
     }
 }
-impl DivAssign<f64> for Vec3 {
-    fn div_assign(&mut self, rhs: f64) {
-        *self *= 1_f64 / rhs
+impl DivAssign<f32> for Vec3 {
+    fn div_assign(&mut self, rhs: f32) {
+        *self *= 1_f32 / rhs
     }
 }
 
@@ -104,14 +85,9 @@ impl Add for Vec3 {
     type Output = Vec3;
     fn add(self, rhs: Self) -> Self::Output {
         Self {
-            elem: self
-                .elem
-                .iter()
-                .zip(rhs.elem.iter())
-                .map(|(a, b)| a + b)
-                .collect::<Vec<f64>>()
-                .try_into()
-                .unwrap(),
+            x: (self.x() + rhs.x()),
+            y: (self.y() + rhs.y()),
+            z: (self.z() + rhs.z()),
         }
     }
 }
@@ -125,109 +101,98 @@ impl Mul<Vec3> for Vec3 {
     type Output = Vec3;
     fn mul(self, rhs: Vec3) -> Self::Output {
         Self {
-            elem: self
-                .elem
-                .iter()
-                .zip(rhs.elem.iter())
-                .map(|(a, b)| a * b)
-                .collect::<Vec<f64>>()
-                .try_into()
-                .unwrap(),
+            x: (self.x() * rhs.x()),
+            y: (self.y() * rhs.y()),
+            z: (self.z() * rhs.z()),
         }
     }
 }
-impl Mul<f64> for Vec3 {
+impl Mul<f32> for Vec3 {
     type Output = Vec3;
-    fn mul(self, rhs: f64) -> Self::Output {
+    fn mul(self, rhs: f32) -> Self::Output {
         self * Vec3::new_singleton(rhs)
     }
 }
-impl Mul<Vec3> for f64 {
+impl Mul<Vec3> for f32 {
     type Output = Vec3;
     fn mul(self, rhs: Vec3) -> Self::Output {
         rhs * self
     }
 }
-impl Div<f64> for Vec3 {
+impl Div<f32> for Vec3 {
     type Output = Vec3;
-    fn div(self, rhs: f64) -> Self::Output {
-        self * (1_f64 / rhs)
+    fn div(self, rhs: f32) -> Self::Output {
+        self * (1_f32 / rhs)
     }
 }
 
 impl Vec3 {
-    pub fn dot(&self, other: Vec3) -> f64 {
-        (*self * other).elem.iter().sum::<f64>()
+    pub fn dot(&self, other: Vec3) -> f32 {
+        let tmp = *self * other;
+        tmp.x() + tmp.y() + tmp.z()
     }
     pub fn cross(&self, other: Vec3) -> Vec3 {
         Self {
-            elem: [
-                self.y() * other.z() - self.z() * other.y(),
-                self.z() * other.x() - self.x() * other.z(),
-                self.x() * other.y() - self.y() * other.x(),
-            ],
+            x: self.y() * other.z() - self.z() * other.y(),
+            y: self.z() * other.x() - self.x() * other.z(),
+            z: self.x() * other.y() - self.y() * other.x(),
         }
     }
     pub fn unit_vector(&self) -> Vec3 {
         *self / self.length()
     }
 
-    pub fn random_vec3() -> Vec3 {
-        Vec3::new(random_double(), random_double(), random_double())
+    pub fn random_vec3<R: Rng + ?Sized>(rng: &mut R) -> Vec3 {
+        Vec3::new(random(rng), random(rng), random(rng))
     }
-    pub fn random_vec3_range(min: f64, max: f64) -> Vec3 {
+    pub fn random_vec3_range<R: Rng + ?Sized>(min: f32, max: f32, rng: &mut R) -> Vec3 {
         Vec3::new(
-            random_double_range(min, max),
-            random_double_range(min, max),
-            random_double_range(min, max),
+            random_range(min, max, rng),
+            random_range(min, max, rng),
+            random_range(min, max, rng),
         )
     }
     /// Initial Lambertian
-    pub fn random_in_unit_sphere() -> Vec3 {
-        let mut out: Vec3 = Vec3::random_vec3_range(-1.0, 1.0);
+    pub fn random_in_unit_sphere<R: Rng + ?Sized>(rng: &mut R) -> Vec3 {
+        let mut out: Vec3 = Vec3::random_vec3_range(-1.0, 1.0, rng);
         loop {
             if out.length_squared() < 1.0 {
                 return out;
             }
-            out = Vec3::random_vec3_range(-1.0, 1.0);
+            out = Vec3::random_vec3_range(-1.0, 1.0, rng);
         }
     }
     /// Better Lambertian
-    pub fn random_unit_vector() -> Vec3 {
-        Vec3::random_in_unit_sphere().unit_vector()
+    pub fn random_unit_vector<R: Rng + ?Sized>(rng: &mut R) -> Vec3 {
+        Vec3::random_in_unit_sphere(rng).unit_vector()
     }
     /// Even better Lambertian
-    pub fn random_in_hemisphere(normal: &Vec3) -> Vec3 {
-        let in_unit_sphere = Vec3::random_in_unit_sphere();
-        if in_unit_sphere.dot(*normal) > 0.0 {
+    pub fn random_in_hemisphere<R: Rng + ?Sized>(normal: Vec3, rng: &mut R) -> Vec3 {
+        let in_unit_sphere = Vec3::random_in_unit_sphere(rng);
+        if in_unit_sphere.dot(normal) > 0.0 {
             in_unit_sphere
         } else {
             -in_unit_sphere
         }
     }
     pub fn near_zero(&self) -> bool {
-        let s = 1e-8_f64;
+        let s = 1e-8_f32;
         self.x().abs() < s && self.y().abs() < s && self.z().abs() < s
     }
-    pub fn reflect(&self, n: &Vec3) -> Vec3 {
-        *self - 2.0 * self.dot(*n) * *n
+    pub fn reflect(&self, n: Vec3) -> Vec3 {
+        *self - 2.0 * self.dot(n) * n
     }
-    pub fn refract(uv: &Vec3, n: &Vec3, etai_over_etat: f64) -> Vec3 {
-        // let cos_theta = (*uv).dot(*n).min(1.0);
-        // let r_out_perp = etai_over_etat * (*uv + cos_theta * *n);
-        // let r_out_parallel = (1.0 - r_out_perp.length_squared()).abs().sqrt() * -(*n);
-        // r_out_perp + r_out_parallel
-        let uv = *uv;
+    pub fn refract(uv: Vec3, n: Vec3, etai_over_etat: f32) -> Vec3 {
         let cos_theta = n.dot(-uv).min(1.0);
-        let r_out_perp = etai_over_etat * (uv + cos_theta * *n);
-        let r_out_parallel = (1.0 - r_out_perp.length_squared()).abs().sqrt() * -1.0 * *n;
+        let r_out_perp = etai_over_etat * (uv + cos_theta * n);
+        let r_out_parallel = (1.0 - r_out_perp.length_squared()).abs().sqrt() * -1.0 * n;
         r_out_parallel + r_out_perp
     }
-    pub fn random_in_unit_disk() -> Vec3 {
+    pub fn random_in_unit_disk<R: Rng + ?Sized>(rng: &mut R) -> Vec3 {
         loop {
             let p = Vec3::new(
-                random_double_range(-1.0, 1.0),
-                random_double_range(-1.0, 1.0),
+                random_range(-1.0, 1.0, rng),
+                random_range(-1.0, 1.0, rng),
                 0.0,
             );
             if p.length_squared() >= 1.0 {
@@ -236,137 +201,6 @@ impl Vec3 {
             return p;
         }
     }
-}
-
-#[test]
-fn test_gen() {
-    let vec: Vec3 = Vec3::new(0.1, 0.2, 0.3);
-    vec.print();
-}
-#[test]
-fn test_xyz() {
-    let vec: Vec3 = Vec3::new(0.1, 0.2, 0.3);
-    assert_eq!(vec.x(), 0.1);
-    assert_eq!(vec.y(), 0.2);
-    assert_eq!(vec.z(), 0.3);
-}
-#[test]
-fn test_rgb() {
-    let vec: Vec3 = Vec3::new(0.1, 0.2, 0.3);
-    assert_eq!(vec.r(), 0.1);
-    assert_eq!(vec.g(), 0.2);
-    assert_eq!(vec.b(), 0.3);
-}
-#[test]
-fn test_neg() {
-    let vec: Vec3 = Vec3::new(0.1, 0.2, 0.3);
-    assert_eq!(Vec3::new(-0.1, -0.2, -0.3), -vec)
-}
-#[test]
-fn test_idx() {
-    let vec: Vec3 = Vec3::new(0.1, 0.2, 0.3);
-    assert_eq!(vec[0], 0.1);
-    assert_eq!(vec[1], 0.2);
-    assert_eq!(vec[2], 0.3);
-}
-#[test]
-fn test_addeq() {
-    let mut vec: Vec3 = Vec3::new(0.1, 0.2, 0.3);
-    // let vec2 = vec.clone();
-    vec += vec;
-    assert_eq!(Vec3::new(0.2, 0.4, 0.6), vec);
-    vec += vec;
-    assert_eq!(Vec3::new(0.4, 0.8, 1.2), vec);
-}
-#[test]
-fn test_subeq() {
-    let mut vec = Vec3::new(0.1, 0.2, 0.3);
-    vec -= vec;
-    assert_eq!(Vec3::new_dfl(), vec)
-}
-
-#[test]
-fn test_muleq() {
-    let mut vec = Vec3::new(0.1, 0.2, 0.3);
-    vec *= 2.0;
-    assert_eq!(Vec3::new(0.2, 0.4, 0.6), vec);
-    vec *= 0.0;
-    assert_eq!(Vec3::new_dfl(), vec);
-}
-
-#[test]
-fn test_diveq() {
-    use std::f64::INFINITY;
-    let mut vec = Vec3::new(0.1, 0.2, 0.3);
-    vec /= 2.0;
-    assert_eq!(Vec3::new(0.05, 0.1, 0.15), vec);
-    vec /= 0.0;
-    assert_eq!(Vec3::new(INFINITY, INFINITY, INFINITY), vec)
-}
-#[test]
-fn test_length() {
-    assert_eq!(0.0, Vec3::new_dfl().length());
-    assert_eq!(14.0f64.sqrt(), Vec3::new(1.0, 2.0, 3.0).length());
-}
-#[test]
-fn test_length_squared() {
-    assert_eq!(0.0, Vec3::new_dfl().length());
-    assert_eq!(14.0f64, Vec3::new(1.0, 2.0, 3.0).length_squared());
-}
-#[test]
-fn test_add() {
-    let vec: Vec3 = Vec3::new(0.1, 0.2, 0.3);
-    assert_eq!(Vec3::new(0.2, 0.4, 0.6), vec + vec)
-}
-#[test]
-fn test_sub() {
-    let vec: Vec3 = Vec3::new(0.1, 0.2, 0.3);
-    assert_eq!(Vec3::new_dfl(), vec - vec)
-}
-#[test]
-fn test_mul() {
-    let vec: Vec3 = Vec3::new(1.0, 2.0, 3.0);
-    let zero = 0.0_f64;
-    let two = 2_f64;
-    assert_eq!(Vec3::new(1.0, 4.0, 9.0), vec * vec);
-    assert_eq!(Vec3::new_dfl(), vec * zero);
-    assert_eq!(Vec3::new(2.0, 4.0, 6.0), vec * two);
-    assert_eq!(Vec3::new_dfl(), zero * vec);
-    assert_eq!(Vec3::new(2.0, 4.0, 6.0), two * vec);
-}
-#[test]
-fn test_div() {
-    use std::f64::INFINITY;
-    let vec: Vec3 = Vec3::new(1.0, 2.0, 3.0);
-    let zero = 0.0_f64;
-    let two = 2_f64;
-    assert_eq!(Vec3::new(0.5, 1.0, 1.5), vec / two);
-    assert_eq!(Vec3::new(INFINITY, INFINITY, INFINITY), vec / zero);
-}
-#[test]
-fn test_dot() {
-    let vec: Vec3 = Vec3::new(1.0, 2.0, 3.0);
-    let zero = 0.0_f64;
-    let zero_vec = Vec3::new_dfl();
-    assert_eq!(14_f64, vec.dot(vec));
-    assert_eq!(zero, vec.dot(zero_vec));
-    assert_eq!(zero, zero_vec.dot(vec));
-}
-
-#[test]
-fn test_cross() {
-    let vec1 = Vec3::new(2.0, 4.0, 5.0);
-    let vec2 = Vec3::new(-3.0, 2.0, 3.0);
-    assert_eq!(Vec3::new(2.0, -21.0, 16.0), vec1.cross(vec2))
-}
-
-#[test]
-fn test_unitvector() {
-    let vec = Vec3::new(2.0, 0.0, 0.0);
-    assert_eq!(Vec3::new(1.0, 0.0, 0.0), vec.unit_vector());
-    // Do not know how to do float equals but just fp error off
-    // let vec = Vec3::new(3.0, 4.0, 0.0);
-    // assert_eq!(Vec3::new(0.6, 0.8, 0.0), vec.unit_vector())
 }
 
 #[test]

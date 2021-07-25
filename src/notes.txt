@@ -1,0 +1,58 @@
+xorshift32 for pseudorandom https://en.wikipedia.org/wiki/Xorshift
+reference single rng 
+
+each thread gets own rng but make them static and just next random instead of spawning new rng each time needed
+
+rayon to parallelize
+
+https://deterministic.space/high-performance-rust.html
+
+https://likebike.com/posts/How_To_Write_Fast_Rust_Code.html
+    notice if let , get over indexing [i]
+
+
+persistent immutable stuff with pointers 
+
+https://stackoverflow.com/questions/39219961/how-to-get-assembly-output-from-building-with-cargo 
+    notice emit asm for better llvm optimizing
+
+
+https://www.reddit.com/r/rust/comments/k0qzcf/a_raytracer_written_in_rust/
+https://www.reddit.com/r/rust/comments/k0qzcf/a_raytracer_written_in_rust/gdl6vn4/
+
+https://github.com/IceSentry/raytracing-weekend-rs/blob/master/src/renderer.rs
+
+https://github.com/daniel5151/vrai-tracer
+
+https://github.com/nsauzede/realist/pull/5/commits/a2187f18fc6379742e1d9a5253aa6af52f272a94
+
+
+https://github.com/JDuchniewicz/rustracing/pull/1/commits/e83b3585381ae67a4aebdc646a4b41dca38a5161
+https://github.com/JDuchniewicz/rustracing/pull/1
+
+
+https://stackoverflow.com/questions/31012923/what-is-the-difference-between-copy-and-clone 
+    Notie Copy requires Clone but they do different things; copy means not move
+
+
+cfg debug for easier debug
+
+scene.rs for random scene, cornell, etc
+
+add triangles and stuff
+
+render.rs
+
+chill with the Rc pointers
+
+u8 as the color
+
+https://github.com/perliedman/raytracing-in-one-weekend/blob/aa641d43e1540b05d2cfb500f8c4a0a64ec9f9f9/src/renderer.rs
+    example of parallel iterators and maps
+
+
+https://www.reddit.com/r/rust/comments/kbec6h/polymorphism_in_rust_enums_vs_traits/gfi2gnu/
+    An enum is a closed set of types, with an arbitrary number of related properties.
+    A trait is a closed set of properties, with an arbitrary number of related types.
+
+https://www.forrestthewoods.com/blog/should-small-rust-structs-be-passed-by-copy-or-by-borrow/
