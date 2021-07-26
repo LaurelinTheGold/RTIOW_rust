@@ -1,7 +1,7 @@
 use std::marker::{Send, Sync};
 use std::{f32::INFINITY, u8, usize};
 
-use rand::prelude::StdRng;
+// use rand::prelude::StdRng;
 use rand::{thread_rng, Rng};
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use rayon::prelude::*;
@@ -53,7 +53,8 @@ fn render_a_row<R: Rng + ?Sized>(
     rng: &mut R,
 ) -> Vec<u32> {
     (0..width)
-        .into_par_iter()
+        // .into_par_iter()
+        .into_iter()
         .map(|curr_col| -> Vec3 {
             // (0..samples_per_pixel)
             //     .into_par_iter()
@@ -64,12 +65,12 @@ fn render_a_row<R: Rng + ?Sized>(
             //         )
             //     })
             //     .reduce(|| Vec3::new_dfl(), |boi, food| boi + food)
-            let mut rng = thread_rng();
+            // let mut rng = thread_rng();
             (0..samples_per_pixel)
                 .into_iter()
                 .map(|_x| -> Vec3 {
                     get_ray_color(
-                        world, max_depth, width, height, curr_row, curr_col, &cam, &mut rng,
+                        world, max_depth, width, height, curr_row, curr_col, &cam, rng,
                     )
                 })
                 .fold(Vec3::new_dfl(), |boi, food| boi + food)
@@ -110,7 +111,7 @@ pub fn render_scene<R: Rng + ?Sized + Sync + Send>(
     height: usize,
     samples_per_pixel: usize,
     cam: Camera,
-    rng: &mut R,
+    _rng: &mut R,
 ) -> Vec<Vec<u32>> {
     (0..height)
         .into_par_iter()

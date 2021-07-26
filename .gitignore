@@ -1,3 +1,9 @@
 /target
 /old_source
 /ignore
+*.data
+*.html
+*.svg
+
+img_profile.ppm
+img.ppm
