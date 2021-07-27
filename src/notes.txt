@@ -64,3 +64,9 @@ imagemagick: convert x.ppm x.png
 
 gitbash or wsl
 $ RUSTFLAGS="--emit asm" cargo build --release && cargo run --release > image_balls.ppm
+
+const and tail call recursion 
+generic types for vectors
+
+
+buffer/queue mutex gated pipeline of random numbers that threads take? nondeterministic order
