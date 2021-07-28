@@ -17,6 +17,7 @@
 
 ## Current Steps ##
 - Figure out how to profile execution to find what are the slow parts
+    - Possibly try timing runs with glam vs my own library to see which is faster
 - Figure out how to pass threadsafe rng or statically give each thread its own rng rather than making a new rng for each thing
 - Figure out what the best combination of parallel iterators are
     - Rows
@@ -40,4 +41,28 @@
 - Possibly add distinction between vec3 and vec4 for homogeneous coordinates and normal vectors and such
 - Allow loading of object files
 
+
+## Benchmarking, Profiling, and Maximizing Performance ##
+
+- Increasing Performance:
+    - `--release` vs debug
+    - `--emit=asm` vs none
+    - `lto = fat` vs thin vs none
+    - `codegen-units = 1`
+    - `-C target-cpu=native`
+    - `panic = abort`
+
+- Using `perf` to profile
+```bash
+$ perf record --call-graph dwarf -- cargo run --release
+$ perf report
+```
+- Build
+```bash
+RUSTFLAGS="--emit=asm -C target-cpu=native" cargo build --release 
+```
+- Run
+```bash
+time target/release/./raytracer_weekend > dump.ppm
+```
 

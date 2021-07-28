@@ -39,11 +39,11 @@ fn main() {
     // const SAMPLES_PER_PIXEL: usize = 500;
     // const ASPECT_RATIO: f32 = 16. / 10.;
     // const IMAGE_WIDTH: usize = 1920;
-    const SAMPLES_PER_PIXEL: usize = 25;
+    const SAMPLES_PER_PIXEL: usize = 100;
     const ASPECT_RATIO: f32 = 16. / 9.;
-    const IMAGE_WIDTH: usize = 80;
+    const IMAGE_WIDTH: usize = 400;
     const IMAGE_HEIGHT: usize = (IMAGE_WIDTH as f32 / ASPECT_RATIO) as usize;
-    const MAX_DEPTH: usize = 10;
+    const MAX_DEPTH: usize = 50;
     let world = scene::random_scene(&mut rng);
     let cam = Camera::new_random(ASPECT_RATIO);
     let image = render_scene(

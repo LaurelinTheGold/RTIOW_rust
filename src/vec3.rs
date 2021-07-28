@@ -15,39 +15,68 @@ pub type Color = Vec3;
 pub type Point = Vec3;
 
 impl Vec3 {
-    pub fn new(x: f32, y: f32, z: f32) -> Self {
+    pub const fn new(x: f32, y: f32, z: f32) -> Self {
         Self { x, y, z }
     }
-    pub fn new_singleton(e: f32) -> Self {
+    pub const fn new_singleton(e: f32) -> Self {
         Self::new(e, e, e)
     }
-    pub fn new_dfl() -> Self {
+    pub const fn new_dfl() -> Self {
         Self::new_singleton(0_f32)
     }
 
     /// Get vec3's x.
-    pub fn x(&self) -> f32 {
+    pub const fn x(&self) -> f32 {
         self.x
     }
 
     /// Get vec3's y.
-    pub fn y(&self) -> f32 {
+    pub const fn y(&self) -> f32 {
         self.y
     }
 
     /// Get vec3's z.
-    pub fn z(&self) -> f32 {
+    pub const fn z(&self) -> f32 {
         self.z
     }
-
-    pub fn length(&self) -> f32 {
+}
+impl Vec3 {
+    pub fn length(self) -> f32 {
         self.length_squared().sqrt()
     }
-    pub fn length_squared(&self) -> f32 {
+    pub fn length_squared(self) -> f32 {
         let a = self.x();
         let b = self.y();
         let c = self.z();
         a * a + b * b + c * c
+    }
+
+    pub fn dot(self, other: Vec3) -> f32 {
+        let tmp = self * other;
+        tmp.x() + tmp.y() + tmp.z()
+    }
+    pub fn cross(self, other: Vec3) -> Vec3 {
+        Self {
+            x: self.y() * other.z() - self.z() * other.y(),
+            y: self.z() * other.x() - self.x() * other.z(),
+            z: self.x() * other.y() - self.y() * other.x(),
+        }
+    }
+    pub fn unit_vector(self) -> Vec3 {
+        self / self.length()
+    }
+    pub fn near_zero(self) -> bool {
+        let s = 1e-8_f32;
+        self.x().abs() < s && self.y().abs() < s && self.z().abs() < s
+    }
+    pub fn reflect(self, n: Vec3) -> Vec3 {
+        self - 2.0 * self.dot(n) * n
+    }
+    pub fn refract(self, n: Vec3, etai_over_etat: f32) -> Vec3 {
+        let cos_theta = n.dot(-self).min(1.0);
+        let r_out_perp = etai_over_etat * (self + cos_theta * n);
+        let r_out_parallel = (1.0 - r_out_perp.length_squared()).abs().sqrt() * -1.0 * n;
+        r_out_parallel + r_out_perp
     }
 }
 
@@ -124,21 +153,6 @@ impl Div<f32> for Vec3 {
 }
 
 impl Vec3 {
-    pub fn dot(&self, other: Vec3) -> f32 {
-        let tmp = *self * other;
-        tmp.x() + tmp.y() + tmp.z()
-    }
-    pub fn cross(&self, other: Vec3) -> Vec3 {
-        Self {
-            x: self.y() * other.z() - self.z() * other.y(),
-            y: self.z() * other.x() - self.x() * other.z(),
-            z: self.x() * other.y() - self.y() * other.x(),
-        }
-    }
-    pub fn unit_vector(&self) -> Vec3 {
-        *self / self.length()
-    }
-
     pub fn random_vec3<R: Rng + ?Sized>(rng: &mut R) -> Vec3 {
         Vec3::new(random(rng), random(rng), random(rng))
     }
@@ -172,19 +186,6 @@ impl Vec3 {
             -in_unit_sphere
         }
     }
-    pub fn near_zero(&self) -> bool {
-        let s = 1e-8_f32;
-        self.x().abs() < s && self.y().abs() < s && self.z().abs() < s
-    }
-    pub fn reflect(&self, n: Vec3) -> Vec3 {
-        *self - 2.0 * self.dot(n) * n
-    }
-    pub fn refract(uv: Vec3, n: Vec3, etai_over_etat: f32) -> Vec3 {
-        let cos_theta = n.dot(-uv).min(1.0);
-        let r_out_perp = etai_over_etat * (uv + cos_theta * n);
-        let r_out_parallel = (1.0 - r_out_perp.length_squared()).abs().sqrt() * -1.0 * n;
-        r_out_parallel + r_out_perp
-    }
     pub fn random_in_unit_disk<R: Rng + ?Sized>(rng: &mut R) -> Vec3 {
         loop {
             let p = Vec3::new(
@@ -206,8 +207,8 @@ fn test_linalg() {
     let vecy = Vec3::new(0.0, 1.0, 0.0);
     let vecz = Vec3::new(0.0, 0.0, 1.0);
     let zero = Vec3::new_dfl();
-    assert_eq!(vecz, Vec3::cross(&vecx, vecy));
-    assert_eq!(-vecz, Vec3::cross(&vecy, vecx));
+    assert_eq!(vecz, Vec3::cross(vecx, vecy));
+    assert_eq!(-vecz, Vec3::cross(vecy, vecx));
     assert_eq!(zero, vecx.cross(vecx));
     assert_eq!(zero, vecy.cross(vecy));
     assert_eq!(zero, vecz.cross(vecz));

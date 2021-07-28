@@ -70,3 +70,8 @@ generic types for vectors
 
 
 buffer/queue mutex gated pipeline of random numbers that threads take? nondeterministic order
+
+apparenlty glam is good for graphics linalg while nalgebra/ndarray/lapack/blas is for general purpose linalg
+
+
+
