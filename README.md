@@ -1,5 +1,7 @@
 # RTIOW - Rust Version #
 
+<img src="images/image_balls_1920_1200.png">
+
 ## So Far ##
 - I first made a naive implementation of Ray Tracing In One Weekend by basically 1:1 copying the C++ into Rust
 - I made changes to trade slower compilation for faster performance

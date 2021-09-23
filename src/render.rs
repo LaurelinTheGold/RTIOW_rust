@@ -1,10 +1,12 @@
 use std::marker::{Send, Sync};
 use std::{f32::INFINITY, u8, usize};
 
+use rand::prelude::StdRng;
 // use rand::prelude::StdRng;
-use rand::{thread_rng, Rng};
+use rand::{thread_rng, Rng, SeedableRng};
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use rayon::prelude::*;
+use tailcall::tailcall;
 
 use crate::{
     camera::Camera,
@@ -21,24 +23,72 @@ pub fn ray_color<'b, R: Rng + ?Sized>(
     depth: usize,
     rng: &mut R,
 ) -> Color {
-    if depth <= 0 {
-        Color::new_dfl()
-    } else {
-        match world.hit(r, 0.001, INFINITY) {
-            Some(rec) => match rec.mat_ptr().scatter(r, &rec, rng) {
-                Some(scatter_bundle) => {
-                    // dbg!(&scatter_bundle);
-                    scatter_bundle.albedo() * ray_color(scatter_bundle.ray(), world, depth - 1, rng)
-                }
-                None => Color::new_dfl(),
-            },
-            None => {
-                let unit_direction = r.dir().unit_vector();
-                let t = 0.5 * (unit_direction.y() + 1.0);
-                (1.0 - t) * Color::new_singleton(1.0) + t * Color::new(0.5, 0.7, 1.0)
+    // tested with single threaded, no target native cpu
+    //? naive recursion, dump1, 11.206s
+    // if depth <= 0 {
+    //     Color::new_dfl()
+    // } else {
+    //     match world.hit(r, 0.001, INFINITY) {
+    //         Some(rec) => match rec.mat_ptr().scatter(r, &rec, rng) {
+    //             Some(scatter_bundle) => {
+    //                 scatter_bundle.albedo() * ray_color(scatter_bundle.ray(), world, depth - 1, rng)
+    //             }
+    //             None => Color::new_dfl(),
+    //         },
+    //         None => sky_color(r),
+    //     }
+    // }
+    //? Iterative, dump2, 11.124s
+    let mut ret_color = Color::new_singleton(1.);
+    let mut cur_ray = r;
+    for tmp in (0..depth).rev() {
+        if tmp == 0 {
+            return Color::new_dfl();
+        }
+        if let Some(rec) = world.hit(cur_ray, 0.001, INFINITY) {
+            if let Some(scatter_bundle) = rec.mat_ptr().scatter(cur_ray, &rec, rng) {
+                ret_color = scatter_bundle.albedo() * ret_color;
+                cur_ray = scatter_bundle.ray();
+            } else {
+                return Color::new_dfl();
             }
+        } else {
+            return ret_color * sky_color(cur_ray);
         }
     }
+    ret_color
+    //? (hopefully) tail call optimized recursion, dump3, 11.225s
+    // #[tailcall]
+    // fn ray_color_tail<'b, R: Rng + ?Sized>(
+    //     r: Ray,
+    //     world: &'b HittableObject,
+    //     depth: usize,
+    //     rng: &mut R,
+    //     color_acc: Color,
+    // ) -> Color {
+    //     match depth <= 0 {
+    //         true => Color::new_dfl(),
+    //         false => match world.hit(r, 0.001, INFINITY) {
+    //             Some(rec) => match rec.mat_ptr().scatter(r, &rec, rng) {
+    //                 Some(scatter_bundle) => ray_color_tail(
+    //                     scatter_bundle.ray(),
+    //                     world,
+    //                     depth - 1,
+    //                     rng,
+    //                     color_acc * scatter_bundle.albedo(),
+    //                 ),
+    //                 None => Color::new_dfl(),
+    //             },
+    //             None => color_acc * sky_color(r),
+    //         },
+    //     }
+    // }
+    // ray_color_tail(r, world, depth, rng, Color::new_singleton(1.))
+}
+
+fn sky_color(r: Ray) -> Color {
+    let t = r.dir().unit_vector().y();
+    (1.0 - t) * Color::new_singleton(1.0) + t * Color::new(0.5, 0.7, 1.0)
 }
 
 /// Note colors are 3 u8 in u32 with 8 msb set to 0
@@ -112,13 +162,15 @@ pub fn render_scene<R: Rng + ?Sized + Sync + Send>(
     samples_per_pixel: usize,
     cam: Camera,
     _rng: &mut R,
+    // rng: &mut R,
 ) -> Vec<Vec<u32>> {
     (0..height)
         .into_par_iter()
+        // .into_iter()
         .rev()
         .map(|row| {
+            let mut rng: StdRng = SeedableRng::seed_from_u64(row as u64);
             // eprint!("\rlines remaining: {}", row);
-            let mut rng = thread_rng();
             render_a_row(
                 world,
                 max_depth,
@@ -128,6 +180,7 @@ pub fn render_scene<R: Rng + ?Sized + Sync + Send>(
                 samples_per_pixel,
                 &cam,
                 &mut rng,
+                // rng,
             )
         })
         .collect::<Vec<_>>()

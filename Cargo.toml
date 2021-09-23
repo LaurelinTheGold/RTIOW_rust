@@ -7,16 +7,17 @@ edition = "2018"
 
 
 [profile.release]
+debug = true
 lto = "fat"
 codegen-units = 1
 
-# debug = true
 
-# [rust]
-# debuginfo-level = 1
+[rust]
+debuginfo-level = 1
 
 [dependencies]
 rand = {version = "0.8.4", features = ["std_rng"]}
 rayon = "1.5.1"
-# tailcall = "0.1.5"
+tailcall = "0.1.6"
+
 

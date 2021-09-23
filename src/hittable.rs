@@ -50,37 +50,22 @@ impl<'b> Hittable for HittableObject {
     fn hit(&self, r: Ray, tmin: f32, tmax: f32) -> Option<HitRecord> {
         match self {
             HittableObject::HittableList(a) => a
-                .par_iter()
+                //? Single threaded better than parallel cuz overhead?
+                .iter()
                 .map(|x| -> Option<HitRecord> { x.hit(r, tmin, tmax) })
-                .reduce(
-                    || None,
-                    |boi, food| match food {
-                        Some(hit) => match boi {
-                            Some(prev_hit) => {
-                                if prev_hit.t() > hit.t() {
-                                    Some(hit)
-                                } else {
-                                    Some(prev_hit)
-                                }
+                .fold(None, |boi, food| match food {
+                    Some(hit) => match boi {
+                        Some(prev_hit) => {
+                            if prev_hit.t() > hit.t() {
+                                Some(hit)
+                            } else {
+                                Some(prev_hit)
                             }
-                            None => Some(hit),
-                        },
-                        None => boi,
+                        }
+                        None => Some(hit),
                     },
-                ),
-            // .fold(None, |boi, food| match food {
-            //     Some(hit) => match boi {
-            //         Some(prev_hit) => {
-            //             if prev_hit.t() > hit.t() {
-            //                 Some(hit)
-            //             } else {
-            //                 Some(prev_hit)
-            //             }
-            //         }
-            //         None => Some(hit),
-            //     },
-            //     None => boi,
-            // }),
+                    None => boi,
+                }),
             HittableObject::Sphere(center, radius, mat_ptr) => {
                 let oc = r.orig() - *center;
                 let a = r.dir().length_squared();
