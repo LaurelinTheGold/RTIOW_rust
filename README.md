@@ -8,10 +8,10 @@
     - link time optimization: fat
     - codegen units: 1
     - emit asm so llvm and further optimize
-- I made various tweaks to make my code more idiomatic, to satisfy my craving for functional programming, and for aesthetic/dogma reasons 
+- I made various tweaks to make my code more idiomatic (hopefully), to satisfy my craving for functional programming, improve performance, and for aesthetic/dogma reasons 
     - Returning options instead of mutating C-like in/out parameters and returning a bool
     - Replacing imperative loops with map to express applying an operation on the whole collection simultaneously
-    - Replacing if statements with match statements for FP reasons (much flimsier)
+    - Replacing if statements with match statements for FP reasons (much flimsier justification)
 - I added the rayon crate 
     - Replaced .iter() and .into_iter() with .par_iter() and .into_par_iter()
     - tweaked rng generators and fold/reduce/collects until it compiled
