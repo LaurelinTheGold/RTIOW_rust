@@ -5,7 +5,7 @@ use crate::{
     utils::degrees_to_radians,
     vec3::{Point, Vec3},
 };
-#[allow(dead_code)]
+
 pub struct Camera {
     origin: Point,
     horizontal: Vec3,
@@ -52,7 +52,6 @@ impl Camera {
             lens_radius,
         }
     }
-    #[allow(dead_code)]
     pub fn new_dfl(aspect_ratio: f32) -> Self {
         let viewport_height = 2.;
         let viewport_width = aspect_ratio * viewport_height;
@@ -77,7 +76,6 @@ impl Camera {
             lens_radius: (0.0),
         }
     }
-    #[allow(dead_code)]
     pub fn new_debug(aspect_ratio: f32) -> Self {
         let viewport_height = 2.;
         let viewport_width = aspect_ratio * viewport_height;

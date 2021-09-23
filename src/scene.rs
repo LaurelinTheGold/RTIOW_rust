@@ -7,7 +7,6 @@ use crate::material::MaterialType;
 use crate::utils::{random, random_range};
 use crate::vec3::{Color, Point};
 
-#[allow(dead_code)]
 pub fn img_11() -> HittableObject {
     let mut world = Vec::<HittableObject>::new();
     // let ground_mat = Box::new(MaterialType::Lambertian(Color::new(0.8, 0.8, 0.)));
@@ -77,7 +76,6 @@ pub fn random_scene<R: Rng + ?Sized>(rng: &mut R) -> HittableObject {
     ));
     HittableObject::HittableList(world)
 }
-#[allow(dead_code)]
 pub fn debug_scene() -> HittableObject {
     let mut world = Vec::<HittableObject>::new();
     let material = MaterialType::Dielectric(1.5);

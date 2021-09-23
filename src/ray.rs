@@ -11,10 +11,6 @@ impl Ray {
         Self { orig, dir }
     }
 
-    // pub fn new_dfl() -> Self {
-    //     Ray::new(Point::new_dfl(), Vec3::new_singleton(1.0))
-    // }
-
     /// Get a reference to the ray's dir.
     pub fn dir(&self) -> Vec3 {
         self.dir

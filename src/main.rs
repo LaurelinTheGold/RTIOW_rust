@@ -1,12 +1,5 @@
-// use std::fs::File;
-
-// use crate::color::write_color;
-// use crate::ray::Ray;
-// use crate::render::ray_color;
-// use crate::vec3::{Point, Vec3};
 use crate::{camera::Camera, color::print_output, render::render_scene};
 use rand::prelude::StdRng;
-// use rand::thread_rng;
 use rand::SeedableRng;
 
 mod camera;

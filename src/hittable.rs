@@ -1,7 +1,3 @@
-// use std::rc::Rc;
-
-use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
-
 use crate::{material::MaterialType, ray::Ray, vec3::Vec3};
 
 pub struct HitRecord<'a> {

@@ -1,5 +1,5 @@
 use crate::vec3::Color;
-#[allow(dead_code)]
+
 pub fn write_color(pixel_color: Color, samples_per_pixel: usize) {
     const SCALE_FACTOR: f32 = 255.999;
     let scale = 1.0 / samples_per_pixel as f32;

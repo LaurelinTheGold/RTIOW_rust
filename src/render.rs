@@ -2,11 +2,9 @@ use std::marker::{Send, Sync};
 use std::{f32::INFINITY, u8, usize};
 
 use rand::prelude::StdRng;
-// use rand::prelude::StdRng;
-use rand::{thread_rng, Rng, SeedableRng};
+use rand::{Rng, SeedableRng};
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use rayon::prelude::*;
-use tailcall::tailcall;
 
 use crate::{
     camera::Camera,
@@ -91,7 +89,8 @@ fn sky_color(r: Ray) -> Color {
     (1.0 - t) * Color::new_singleton(1.0) + t * Color::new(0.5, 0.7, 1.0)
 }
 
-/// Note colors are 3 u8 in u32 with 8 msb set to 0
+/// Note: colors are 3 u8 in u32 with 8 msb set to 0
+
 fn render_a_row<R: Rng + ?Sized>(
     world: &HittableObject,
     max_depth: usize,
@@ -162,11 +161,9 @@ pub fn render_scene<R: Rng + ?Sized + Sync + Send>(
     samples_per_pixel: usize,
     cam: Camera,
     _rng: &mut R,
-    // rng: &mut R,
 ) -> Vec<Vec<u32>> {
     (0..height)
         .into_par_iter()
-        // .into_iter()
         .rev()
         .map(|row| {
             let mut rng: StdRng = SeedableRng::seed_from_u64(row as u64);
@@ -180,7 +177,6 @@ pub fn render_scene<R: Rng + ?Sized + Sync + Send>(
                 samples_per_pixel,
                 &cam,
                 &mut rng,
-                // rng,
             )
         })
         .collect::<Vec<_>>()
